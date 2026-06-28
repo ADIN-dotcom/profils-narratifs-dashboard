@@ -652,9 +652,9 @@ async function saveProgram() {
     name: document.getElementById('program-name').value,
     facilitator_name: document.getElementById('program-facilitator').value,
     facilitator_email: document.getElementById('program-facilitator-email').value,
-    program_date: document.getElementById('program-date').value,
+    program_date: document.getElementById('program-date').value || null,
     status: document.getElementById('program-status').value,
-    notes: document.getElementById('program-notes').value
+    notes: document.getElementById('program-notes').value || null
   };
   if (!body.name || !body.facilitator_name) return showToast('Заполните название и фасилитатора');
   const data = id
