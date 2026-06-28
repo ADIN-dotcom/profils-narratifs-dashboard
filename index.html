@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profils Narratifs — Tableau de bord</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+  :root {
+    --ink: #111111;
+    --ink-light: #3a3a3a;
+    --ink-faint: #777;
+    --paper: #f7f5f0;
+    --paper-warm: #ede9e0;
+    --white: #ffffff;
+    --accent: #2d4a3e;
+    --accent-light: #3d6454;
+    --rule: #ccc8be;
+    --success: #2d4a3e;
+    --warning: #8b6914;
+    --error: #8b3a2a;
+    --radius: 4px;
+    --sidebar-w: 220px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body { background: var(--paper); color: var(--ink); font-family: 'Inter', sans-serif; font-weight: 400; min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: var(--paper);
+  }
+  .login-box {
+    background: var(--white); border: 0.5px solid var(--rule); border-radius: 8px;
+    padding: 48px 40px; width: 380px; text-align: center;
+  }
+  .login-logo { font-family: 'Cormorant Garamond', serif; font-size: 13px; color: var(--accent); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .login-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 500; color: var(--ink); margin-bottom: 32px; }
+  .login-title em { font-style: italic; color: var(--accent); }
+  .login-input { width: 100%; border: none; border-bottom: 1.5px solid var(--rule); padding: 10px 0; font-family: 'Inter', sans-serif; font-size: 15px; color: var(--ink); outline: none; background: transparent; margin-bottom: 24px; }
+  .login-input:focus { border-color: var(--accent); }
+  .login-btn { width: 100%; background: var(--accent); color: white; border: none; padding: 14px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; border-radius: var(--radius); }
+  .login-btn:hover { background: var(--accent-light); }
+  .login-error { color: var(--error); font-size: 13px; margin-top: 12px; display: none; }
+
+  /* LAYOUT */
+  #app { display: none; min-height: 100vh; }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: var(--sidebar-w); background: var(--accent); color: white;
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 10;
+  }
+  .sidebar-logo { padding: 24px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-logo-top { font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+  .sidebar-logo-bottom { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; color: white; font-style: italic; margin-top: 2px; }
+  .sidebar-nav { flex: 1; padding: 16px 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+    font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.7);
+    cursor: pointer; transition: all 0.2s; border-left: 2px solid transparent;
+  }
+  .nav-item:hover { color: white; background: rgba(255,255,255,0.08); }
+  .nav-item.active { color: white; background: rgba(255,255,255,0.12); border-left-color: white; font-weight: 500; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .logout-btn { font-size: 12px; color: rgba(255,255,255,0.5); cursor: pointer; background: none; border: none; font-family: 'Inter', sans-serif; }
+  .logout-btn:hover { color: white; }
+
+  /* MAIN */
+  .main { margin-left: var(--sidebar-w); flex: 1; padding: 0; }
+  .page-header { padding: 32px 40px 24px; border-bottom: 0.5px solid var(--rule); background: var(--white); }
+  .page-title { font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 500; color: var(--ink); }
+  .page-subtitle { font-size: 13px; color: var(--ink-faint); margin-top: 4px; }
+  .page-content { padding: 32px 40px; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* CARDS */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: var(--white); border: 0.5px solid var(--rule); border-radius: 8px; padding: 20px 24px; }
+  .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 500; color: var(--accent); line-height: 1; }
+  .stat-label { font-size: 12px; color: var(--ink-faint); margin-top: 6px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  /* TABLE */
+  .table-wrap { background: var(--white); border: 0.5px solid var(--rule); border-radius: 8px; overflow: hidden; }
+  .table-head-row { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 0.5px solid var(--rule); }
+  .table-head-title { font-size: 14px; font-weight: 500; color: var(--ink); }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 600; color: var(--ink-faint); letter-spacing: 0.06em; text-transform: uppercase; background: var(--paper); border-bottom: 0.5px solid var(--rule); }
+  td { padding: 12px 16px; font-size: 13px; color: var(--ink-light); border-bottom: 0.5px solid var(--rule); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--paper); }
+
+  /* BADGES */
+  .badge { display: inline-block; font-size: 11px; padding: 3px 8px; border-radius: 3px; font-weight: 500; }
+  .badge-green { background: rgba(45,74,62,0.1); color: var(--accent); }
+  .badge-yellow { background: rgba(139,105,20,0.1); color: var(--warning); }
+  .badge-gray { background: var(--paper-warm); color: var(--ink-faint); }
+  .badge-red { background: rgba(139,58,42,0.1); color: var(--error); }
+
+  /* BUTTONS */
+  .btn { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; padding: 8px 16px; border-radius: var(--radius); cursor: pointer; transition: all 0.2s; border: none; letter-spacing: 0.04em; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent-light); }
+  .btn-ghost { background: transparent; color: var(--ink-light); border: 0.5px solid var(--rule); }
+  .btn-ghost:hover { border-color: var(--ink-light); color: var(--ink); }
+  .btn-danger { background: transparent; color: var(--error); border: 0.5px solid rgba(139,58,42,0.3); }
+  .btn-danger:hover { background: rgba(139,58,42,0.05); }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--white); border-radius: 8px; padding: 32px; width: 520px; max-width: 90vw; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 500; color: var(--ink); margin-bottom: 24px; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-light); display: block; margin-bottom: 8px; }
+  .form-input { width: 100%; border: none; border-bottom: 1.5px solid var(--rule); padding: 8px 0; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--ink); outline: none; background: transparent; }
+  .form-input:focus { border-color: var(--accent); }
+  .form-select { width: 100%; border: 0.5px solid var(--rule); border-radius: var(--radius); padding: 8px 12px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--ink); outline: none; background: var(--white); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 28px; padding-top: 20px; border-top: 0.5px solid var(--rule); }
+
+  /* PROFILE VIEW */
+  .profile-section { background: var(--white); border: 0.5px solid var(--rule); border-radius: 8px; padding: 24px; margin-bottom: 16px; }
+  .profile-section-title { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 0.5px solid var(--rule); }
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .profile-item { }
+  .profile-item-label { font-size: 11px; font-weight: 600; color: var(--ink-faint); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+  .profile-item-value { font-size: 14px; color: var(--ink); line-height: 1.6; }
+  .quote-box { background: var(--paper); border-left: 3px solid var(--accent); padding: 12px 16px; border-radius: 0 4px 4px 0; font-size: 13px; color: var(--ink-light); font-style: italic; line-height: 1.6; margin-bottom: 8px; }
+  .red-flag { background: rgba(139,58,42,0.05); border-left: 3px solid var(--error); padding: 12px 16px; border-radius: 0 4px 4px 0; margin-bottom: 8px; }
+  .red-flag-title { font-size: 13px; font-weight: 600; color: var(--error); margin-bottom: 4px; }
+  .red-flag-desc { font-size: 13px; color: var(--ink-light); line-height: 1.6; }
+  .tip-item { padding: 12px 0; border-bottom: 0.5px solid var(--rule); }
+  .tip-item:last-child { border-bottom: none; }
+  .tip-title { font-size: 13px; font-weight: 500; color: var(--accent); margin-bottom: 4px; }
+  .tip-text { font-size: 13px; color: var(--ink-light); line-height: 1.6; }
+
+  /* PROGRESS */
+  .progress-bar { height: 6px; background: var(--paper-warm); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.3s; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--ink); color: white; padding: 12px 20px; border-radius: var(--radius); font-size: 13px; z-index: 200; display: none; }
+  .toast.show { display: block; animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--ink-faint); }
+  .empty-state-icon { font-size: 40px; margin-bottom: 16px; }
+  .empty-state-text { font-size: 14px; }
+
+  /* SECTION DIVIDER */
+  .section-divider { margin: 28px 0; border: none; border-top: 0.5px solid var(--rule); }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Association de l'intelligence Narrative</div>
+    <h1 class="login-title">Profils<br><em>Narratifs</em></h1>
+    <input type="password" class="login-input" id="login-password" placeholder="Пароль" onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">Войти</button>
+    <div class="login-error" id="login-error">Неверный пароль</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-top">Association de l'intelligence</div>
+        <div class="sidebar-logo-bottom">Narrative</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item active" onclick="showPage('home')">
+          <span class="nav-icon">🏠</span> Главная
+        </div>
+        <div class="nav-item" onclick="showPage('programs')">
+          <span class="nav-icon">📁</span> Программы
+        </div>
+        <div class="nav-item" onclick="showPage('participants')">
+          <span class="nav-icon">👥</span> Участники
+        </div>
+        <div class="nav-item" onclick="showPage('profiles')">
+          <span class="nav-icon">🧠</span> Профили
+        </div>
+        <div class="nav-item" onclick="showPage('settings')">
+          <span class="nav-icon">⚙️</span> Настройки
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="logout-btn" onclick="logout()">Выйти →</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- HOME -->
+      <div class="page active" id="page-home">
+        <div class="page-header">
+          <div class="page-title">Главная</div>
+          <div class="page-subtitle">Сводка по всем программам</div>
+        </div>
+        <div class="page-content">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-num" id="stat-programs">—</div>
+              <div class="stat-label">Активных программ</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" id="stat-participants">—</div>
+              <div class="stat-label">Участников всего</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-num" id="stat-profiles">—</div>
+              <div class="stat-label">Профилей готово</div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <div class="table-head-row">
+              <div class="table-head-title">Последние профили</div>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Участник</th>
+                <th>Компания</th>
+                <th>Психотип</th>
+                <th>Дата</th>
+              </tr></thead>
+              <tbody id="recent-profiles-table">
+                <tr><td colspan="4"><div class="empty-state"><div class="empty-state-text">Загрузка...</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROGRAMS -->
+      <div class="page" id="page-programs">
+        <div class="page-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div class="page-title">Программы</div>
+              <div class="page-subtitle">Управление программами и участниками</div>
+            </div>
+            <button class="btn btn-primary" onclick="showModal('program-modal')">+ Новая программа</button>
+          </div>
+        </div>
+        <div class="page-content">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Название</th>
+                <th>Фасилитатор</th>
+                <th>Дата</th>
+                <th>Участники</th>
+                <th>Прогресс</th>
+                <th>Статус</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="programs-table">
+                <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📁</div><div class="empty-state-text">Программ пока нет</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARTICIPANTS -->
+      <div class="page" id="page-participants">
+        <div class="page-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div class="page-title" id="participants-title">Участники</div>
+              <div class="page-subtitle" id="participants-subtitle">Все участники</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost" onclick="inviteAll()" id="invite-all-btn" style="display:none;">📧 Разослать всем</button>
+              <button class="btn btn-primary" onclick="showAddParticipant()">+ Добавить участника</button>
+            </div>
+          </div>
+        </div>
+        <div class="page-content">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Имя</th>
+                <th>Компания / Должность</th>
+                <th>Email</th>
+                <th>Анкета</th>
+                <th>Компания</th>
+                <th>Профиль</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="participants-table">
+                <tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">Выберите программу чтобы увидеть участников</div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILES -->
+      <div class="page" id="page-profiles">
+        <div class="page-header">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <button class="btn btn-ghost btn-sm" id="back-to-participants" onclick="backToParticipants()" style="display:none;">← Назад</button>
+            <div>
+              <div class="page-title" id="profile-page-title">Профили</div>
+              <div class="page-subtitle" id="profile-page-subtitle">Выберите участника для просмотра профиля</div>
+            </div>
+          </div>
+        </div>
+        <div class="page-content" id="profile-content">
+          <div class="empty-state">
+            <div class="empty-state-icon">🧠</div>
+            <div class="empty-state-text">Выберите участника в разделе «Участники» чтобы открыть профиль</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div class="page-header">
+          <div class="page-title">Настройки</div>
+          <div class="page-subtitle">Тексты писем и параметры системы</div>
+        </div>
+        <div class="page-content">
+          <div class="table-wrap" style="padding:24px;">
+            <div class="form-group">
+              <label class="form-label">Email администратора</label>
+              <input type="email" class="form-input" id="setting-admin-email">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Тема письма-приглашения</label>
+              <input type="text" class="form-input" id="setting-invitation-subject">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Текст письма-приглашения</label>
+              <textarea class="form-input" id="setting-invitation-body" rows="8" style="resize:vertical; min-height:160px; font-size:13px; line-height:1.6;"></textarea>
+              <div style="font-size:11px;color:var(--ink-faint);margin-top:6px;">Переменные: {{name}} {{questionnaire_url}} {{societe_url}} {{deadline}}</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Тема письма-напоминания</label>
+              <input type="text" class="form-input" id="setting-reminder-subject">
+            </div>
+            <div style="margin-top:24px;">
+              <button class="btn btn-primary" onclick="saveSettings()">Сохранить настройки</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- MODAL: Новая программа -->
+<div class="modal-overlay" id="program-modal">
+  <div class="modal">
+    <div class="modal-title" id="program-modal-title">Новая программа</div>
+    <input type="hidden" id="program-id">
+    <div class="form-group">
+      <label class="form-label">Название программы</label>
+      <input type="text" class="form-input" id="program-name" placeholder="Например: Profils Narratifs — Компания Х">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Фасилитатор</label>
+        <input type="text" class="form-input" id="program-facilitator" placeholder="А. Аветисов">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email фасилитатора</label>
+        <input type="email" class="form-input" id="program-facilitator-email">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Дата программы</label>
+        <input type="date" class="form-input" id="program-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Статус</label>
+        <select class="form-select" id="program-status">
+          <option value="active">Активная</option>
+          <option value="completed">Завершена</option>
+          <option value="archive">Архив</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Заметки</label>
+      <input type="text" class="form-input" id="program-notes">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="hideModal('program-modal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveProgram()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Добавить участника -->
+<div class="modal-overlay" id="participant-modal">
+  <div class="modal">
+    <div class="modal-title">Добавить участника</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Имя и фамилия *</label>
+        <input type="text" class="form-input" id="p-name">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email *</label>
+        <input type="email" class="form-input" id="p-email">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Компания</label>
+        <input type="text" class="form-input" id="p-company">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Должность</label>
+        <input type="text" class="form-input" id="p-position">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Страна</label>
+        <input type="text" class="form-input" id="p-country">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Сфера деятельности</label>
+        <input type="text" class="form-input" id="p-industry">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Возраст</label>
+        <select class="form-select" id="p-age">
+          <option value="">— выберите —</option>
+          <option value="до 35">до 35</option>
+          <option value="35–45">35–45</option>
+          <option value="45–55">45–55</option>
+          <option value="55+">55+</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Пол</label>
+        <select class="form-select" id="p-gender">
+          <option value="">— выберите —</option>
+          <option value="Мужской">Мужской</option>
+          <option value="Женский">Женский</option>
+          <option value="Другой">Другой</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Образование</label>
+      <select class="form-select" id="p-education">
+        <option value="">— выберите —</option>
+        <option value="Среднее">Среднее</option>
+        <option value="Бакалавр">Бакалавр</option>
+        <option value="Магистр">Магистр</option>
+        <option value="PhD">PhD</option>
+        <option value="MBA">MBA</option>
+        <option value="Другое">Другое</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="hideModal('participant-modal')">Отмена</button>
+      <button class="btn btn-primary" onclick="saveParticipant()">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://adin-narrativ-backend-production.up.railway.app/api/admin';
+let token = localStorage.getItem('narrativ_token');
+let currentProgramId = null;
+let currentProgramName = null;
+
+// ─── AUTH ───────────────────────────────────────────────────────
+
+async function login() {
+  const password = document.getElementById('login-password').value;
+  try {
+    const res = await fetch(`${API}/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    token = data.token;
+    localStorage.setItem('narrativ_token', token);
+    showApp();
+  } catch(e) {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+function logout() {
+  localStorage.removeItem('narrativ_token');
+  token = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadStats();
+  loadPrograms();
+  loadSettings();
+}
+
+// ─── API ────────────────────────────────────────────────────────
+
+async function api(method, path, body) {
+  const res = await fetch(`${API}${path}`, {
+    method,
+    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (res.status === 401) { logout(); return null; }
+  return res.json();
+}
+
+// ─── NAVIGATION ─────────────────────────────────────────────────
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (name === 'home') loadStats();
+  if (name === 'settings') loadSettings();
+}
+
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function hideModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── HOME ───────────────────────────────────────────────────────
+
+async function loadStats() {
+  const data = await api('GET', '/stats');
+  if (!data) return;
+  document.getElementById('stat-programs').textContent = data.active_programs || 0;
+  document.getElementById('stat-participants').textContent = data.total_participants || 0;
+  document.getElementById('stat-profiles').textContent = data.profiles_ready || 0;
+
+  const tbody = document.getElementById('recent-profiles-table');
+  if (!data.recent_profiles?.length) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty-state"><div class="empty-state-text">Профилей пока нет</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.recent_profiles.map(p => `
+    <tr>
+      <td>${p.name}</td>
+      <td>${p.company || '—'}</td>
+      <td>${p.psychotype || '—'}</td>
+      <td>${formatDate(p.generated_at)}</td>
+    </tr>
+  `).join('');
+}
+
+// ─── PROGRAMS ───────────────────────────────────────────────────
+
+let programs = [];
+
+async function loadPrograms() {
+  const data = await api('GET', '/programs');
+  if (!data) return;
+  programs = data;
+  renderPrograms();
+}
+
+function renderPrograms() {
+  const tbody = document.getElementById('programs-table');
+  if (!programs.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📁</div><div class="empty-state-text">Программ пока нет. Создайте первую.</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = programs.map(p => {
+    const total = parseInt(p.total_participants) || 0;
+    const done = Math.max(parseInt(p.questionnaire_done)||0, parseInt(p.societe_done)||0);
+    const pct = total ? Math.round((done/total)*100) : 0;
+    const statusMap = {active: ['badge-green','Активная'], completed: ['badge-gray','Завершена'], archive: ['badge-gray','Архив']};
+    const [sc, sl] = statusMap[p.status] || ['badge-gray', p.status];
+    return `<tr>
+      <td><strong style="color:var(--ink)">${p.name}</strong></td>
+      <td>${p.facilitator_name}</td>
+      <td>${p.program_date ? formatDate(p.program_date) : '—'}</td>
+      <td>${total}</td>
+      <td style="min-width:120px;">
+        <div style="font-size:11px;color:var(--ink-faint);">${done}/${total} анкет</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      </td>
+      <td><span class="badge ${sc}">${sl}</span></td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="openProgram(${p.id},'${escHtml(p.name)}')">Участники</button>
+        <button class="btn btn-ghost btn-sm" onclick="editProgram(${p.id})">✏️</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function editProgram(id) {
+  const p = programs.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('program-modal-title').textContent = 'Редактировать программу';
+  document.getElementById('program-id').value = p.id;
+  document.getElementById('program-name').value = p.name;
+  document.getElementById('program-facilitator').value = p.facilitator_name;
+  document.getElementById('program-facilitator-email').value = p.facilitator_email;
+  document.getElementById('program-date').value = p.program_date?.split('T')[0] || '';
+  document.getElementById('program-status').value = p.status;
+  document.getElementById('program-notes').value = p.notes || '';
+  showModal('program-modal');
+}
+
+async function saveProgram() {
+  const id = document.getElementById('program-id').value;
+  const body = {
+    name: document.getElementById('program-name').value,
+    facilitator_name: document.getElementById('program-facilitator').value,
+    facilitator_email: document.getElementById('program-facilitator-email').value,
+    program_date: document.getElementById('program-date').value,
+    status: document.getElementById('program-status').value,
+    notes: document.getElementById('program-notes').value
+  };
+  if (!body.name || !body.facilitator_name) return showToast('Заполните название и фасилитатора');
+  const data = id
+    ? await api('PUT', `/programs/${id}`, body)
+    : await api('POST', '/programs', body);
+  if (!data) return;
+  hideModal('program-modal');
+  document.getElementById('program-id').value = '';
+  document.getElementById('program-modal-title').textContent = 'Новая программа';
+  loadPrograms();
+  showToast(id ? 'Программа обновлена' : 'Программа создана');
+}
+
+function openProgram(id, name) {
+  currentProgramId = id;
+  currentProgramName = name;
+  document.getElementById('participants-title').textContent = name;
+  document.getElementById('participants-subtitle').textContent = 'Участники программы';
+  document.getElementById('invite-all-btn').style.display = 'inline-block';
+  showPage('participants');
+  loadParticipants(id);
+}
+
+// ─── PARTICIPANTS ────────────────────────────────────────────────
+
+let participants = [];
+
+async function loadParticipants(programId) {
+  const data = await api('GET', `/programs/${programId}/participants`);
+  if (!data) return;
+  participants = data;
+  renderParticipants();
+}
+
+function renderParticipants() {
+  const tbody = document.getElementById('participants-table');
+  if (!participants.length) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">👥</div><div class="empty-state-text">Участников пока нет. Добавьте первого.</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = participants.map(p => {
+    const qStatus = statusBadge(p.questionnaire_status);
+    const sStatus = statusBadge(p.societe_status);
+    const hasProfile = !!p.psychotype;
+    return `<tr>
+      <td><strong style="color:var(--ink)">${p.name}</strong></td>
+      <td>${p.company || '—'}<br><span style="font-size:11px;color:var(--ink-faint)">${p.position || ''}</span></td>
+      <td>${p.email}</td>
+      <td><span class="badge ${qStatus[0]}">${qStatus[1]}</span></td>
+      <td><span class="badge ${sStatus[0]}">${sStatus[1]}</span></td>
+      <td>${hasProfile ? `<span class="badge badge-green">Готов</span>` : '<span class="badge badge-gray">Нет</span>'}</td>
+      <td style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${p.questionnaire_status === 'not_sent' || p.questionnaire_status === 'invited'
+          ? `<button class="btn btn-ghost btn-sm" onclick="inviteParticipant(${p.id})">📧</button>`
+          : `<button class="btn btn-ghost btn-sm" onclick="remindParticipant(${p.id})">🔔</button>`}
+        ${hasProfile ? `<button class="btn btn-primary btn-sm" onclick="openProfile(${p.id})">Профиль</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="deleteParticipant(${p.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function statusBadge(status) {
+  const map = {
+    not_sent: ['badge-gray', 'Не отправлен'],
+    invited: ['badge-yellow', 'Приглашён'],
+    completed: ['badge-green', 'Заполнен'],
+    processed: ['badge-green', 'Обработан']
+  };
+  return map[status] || ['badge-gray', status || '—'];
+}
+
+function showAddParticipant() {
+  if (!currentProgramId) return showToast('Сначала выберите программу');
+  showModal('participant-modal');
+}
+
+async function saveParticipant() {
+  const body = {
+    name: document.getElementById('p-name').value,
+    email: document.getElementById('p-email').value,
+    company: document.getElementById('p-company').value,
+    position: document.getElementById('p-position').value,
+    country: document.getElementById('p-country').value,
+    industry: document.getElementById('p-industry').value,
+    age_range: document.getElementById('p-age').value,
+    gender: document.getElementById('p-gender').value,
+    education: document.getElementById('p-education').value
+  };
+  if (!body.name || !body.email) return showToast('Имя и email обязательны');
+  const data = await api('POST', `/programs/${currentProgramId}/participants`, body);
+  if (!data) return;
+  hideModal('participant-modal');
+  ['p-name','p-email','p-company','p-position','p-country','p-industry'].forEach(id => document.getElementById(id).value = '');
+  loadParticipants(currentProgramId);
+  showToast('Участник добавлен');
+}
+
+async function deleteParticipant(id) {
+  if (!confirm('Удалить участника?')) return;
+  await api('DELETE', `/participants/${id}`);
+  loadParticipants(currentProgramId);
+  showToast('Участник удалён');
+}
+
+async function inviteParticipant(id) {
+  await api('POST', `/participants/${id}/invite`);
+  loadParticipants(currentProgramId);
+  showToast('Приглашение отправлено');
+}
+
+async function remindParticipant(id) {
+  await api('POST', `/participants/${id}/remind`);
+  showToast('Напоминание отправлено');
+}
+
+async function inviteAll() {
+  if (!currentProgramId) return;
+  if (!confirm('Отправить приглашения всем участникам без статуса?')) return;
+  const data = await api('POST', `/programs/${currentProgramId}/invite-all`);
+  if (!data) return;
+  loadParticipants(currentProgramId);
+  showToast(`Отправлено: ${data.sent} приглашений`);
+}
+
+// ─── PROFILES ───────────────────────────────────────────────────
+
+async function openProfile(participantId) {
+  const data = await api('GET', `/participants/${participantId}/profile`);
+  if (!data || !data.profile_level1) return showToast('Профиль ещё не готов');
+
+  const l1 = typeof data.profile_level1 === 'string' ? JSON.parse(data.profile_level1) : data.profile_level1;
+  const l2 = typeof data.profile_level2 === 'string' ? JSON.parse(data.profile_level2) : data.profile_level2;
+  const cv = data.company_vision ? (typeof data.company_vision === 'string' ? JSON.parse(data.company_vision) : data.company_vision) : null;
+  const pt = l2?.psychotype || {};
+  const nm = l2?.narrative_material || {};
+
+  document.getElementById('profile-page-title').textContent = data.name;
+  document.getElementById('profile-page-subtitle').textContent = `${data.position || '—'} · ${data.company || '—'}`;
+  document.getElementById('back-to-participants').style.display = 'inline-block';
+
+  const content = document.getElementById('profile-content');
+  content.innerHTML = `
+    <!-- Психотип -->
+    <div class="profile-section">
+      <div class="profile-section-title">Психотип — быстрый срез</div>
+      <div class="profile-grid">
+        <div class="profile-item"><div class="profile-item-label">Профиль</div><div class="profile-item-value" style="color:var(--accent);font-weight:500;font-size:16px;">${l1?.profile_title || '—'}</div></div>
+        <div class="profile-item"><div class="profile-item-label">Энергия</div><div class="profile-item-value">${pt.energy || '—'}</div></div>
+        <div class="profile-item"><div class="profile-item-label">Решения</div><div class="profile-item-value">${pt.decisions || '—'}</div></div>
+        <div class="profile-item"><div class="profile-item-label">Структура</div><div class="profile-item-value">${pt.structure || '—'}</div></div>
+      </div>
+      ${pt.notes ? `<div style="margin-top:12px;font-size:13px;color:var(--ink-faint);font-style:italic;">${pt.notes}</div>` : ''}
+    </div>
+
+    <!-- Портрет -->
+    <div class="profile-section">
+      <div class="profile-section-title">Психологический портрет</div>
+      <p style="font-size:14px;line-height:1.75;color:var(--ink-light);margin-bottom:20px;">${l1?.profile_summary || ''}</p>
+      ${(l1?.key_traits||[]).map(t => `
+        <div style="margin-bottom:16px;">
+          <div style="font-size:13px;font-weight:500;color:var(--accent);margin-bottom:4px;">${t.title}</div>
+          <div style="font-size:13px;color:var(--ink-light);line-height:1.6;">${t.description}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <!-- Нарративный материал -->
+    <div class="profile-section">
+      <div class="profile-section-title">Нарративный материал — его собственные слова</div>
+      ${(nm.key_quotes||[]).map(q => `<div class="quote-box">${q}</div>`).join('')}
+      ${nm.bridge_formula_seed ? `
+        <div style="margin-top:16px;">
+          <div style="font-size:11px;font-weight:600;color:var(--ink-faint);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;">Формула моста</div>
+          <div class="quote-box" style="border-color:var(--accent);background:rgba(45,74,62,0.05);">${nm.bridge_formula_seed}</div>
+        </div>
+      ` : ''}
+      ${nm.locus_notes ? `<div style="font-size:13px;color:var(--ink-faint);margin-top:12px;">Локус контроля: ${nm.locus_of_control || '—'} — ${nm.locus_notes}</div>` : ''}
+    </div>
+
+    <!-- Красные флаги -->
+    ${(l2?.red_flags||[]).length ? `
+    <div class="profile-section">
+      <div class="profile-section-title">Красные флаги для фасилитатора</div>
+      ${(l2.red_flags||[]).map(f => `
+        <div class="red-flag">
+          <div class="red-flag-title">${f.title}</div>
+          <div class="red-flag-desc">${f.description}</div>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <!-- Советы -->
+    ${(l2?.facilitator_tips||[]).length ? `
+    <div class="profile-section">
+      <div class="profile-section-title">Советы фасилитатору</div>
+      ${(l2.facilitator_tips||[]).map(t => `
+        <div class="tip-item">
+          <div class="tip-title">${t.title}</div>
+          <div class="tip-text">${t.tip}</div>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <!-- Применение в сценарии -->
+    ${l2?.scenario_application ? `
+    <div class="profile-section">
+      <div class="profile-section-title">Применение в сценарии программы</div>
+      <table style="width:100%;border-collapse:collapse;">
+        ${Object.entries({
+          'Интервью': l2.scenario_application.interview,
+          'Модуль 1': l2.scenario_application.module_1,
+          'Модуль 2': l2.scenario_application.module_2,
+          'Модуль 3': l2.scenario_application.module_3,
+          'Групповая роль': l2.scenario_application.group_role,
+          'После программы': l2.scenario_application.after_program
+        }).map(([k,v]) => v ? `<tr style="border-bottom:0.5px solid var(--rule);">
+          <td style="padding:10px 12px;font-size:12px;font-weight:600;color:var(--accent);width:140px;vertical-align:top;">${k}</td>
+          <td style="padding:10px 12px;font-size:13px;color:var(--ink-light);line-height:1.6;">${v}</td>
+        </tr>` : '').join('')}
+      </table>
+    </div>` : ''}
+
+    <!-- Компания -->
+    ${cv ? `
+    <div class="profile-section">
+      <div class="profile-section-title">Образ компании (SOCIETE)</div>
+      <div class="profile-grid" style="margin-bottom:16px;">
+        <div class="profile-item">
+          <div class="profile-item-label">Компания-мечта</div>
+          <div class="profile-item-value">${(cv.dream_company_words||[]).join(' · ')}</div>
+        </div>
+        <div class="profile-item">
+          <div class="profile-item-label">Компания сейчас</div>
+          <div class="profile-item-value">${(cv.current_company_words||[]).join(' · ')}</div>
+        </div>
+      </div>
+      ${cv.narrative_gap ? `<div style="font-size:13px;color:var(--ink-light);line-height:1.6;margin-bottom:12px;">${cv.narrative_gap}</div>` : ''}
+      ${(cv.benchmark_companies||[]).map(b => `
+        <div style="margin-bottom:8px;">
+          <span style="font-weight:500;color:var(--accent);">${b.name}</span>
+          <span style="font-size:13px;color:var(--ink-faint);"> — ${b.interpretation}</span>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <!-- Комментарии коуча -->
+    ${l1?.coach_comments ? `
+    <div class="profile-section">
+      <div class="profile-section-title">Комментарии для коуча</div>
+      ${l1.coach_comments.main_task ? `<div style="font-size:14px;font-weight:500;color:var(--ink);margin-bottom:12px;">${l1.coach_comments.main_task}</div>` : ''}
+      ${(l1.coach_comments.tips||[]).map(t => `<div style="font-size:13px;color:var(--ink-light);line-height:1.6;margin-bottom:6px;">• ${t}</div>`).join('')}
+      ${l1.coach_comments.conclusion ? `<div class="quote-box" style="margin-top:12px;">${l1.coach_comments.conclusion}</div>` : ''}
+    </div>` : ''}
+
+    <div style="margin-top:24px;display:flex;gap:12px;">
+      <button class="btn btn-primary" onclick="regenerateProfile(${data.id})">🔄 Регенерировать профиль</button>
+    </div>
+  `;
+
+  // Перейти на страницу профилей
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-profiles').classList.add('active');
+  document.querySelectorAll('.nav-item')[3].classList.add('active');
+}
+
+function backToParticipants() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-participants').classList.add('active');
+  document.querySelectorAll('.nav-item')[2].classList.add('active');
+  document.getElementById('back-to-participants').style.display = 'none';
+}
+
+async function regenerateProfile(id) {
+  showToast('Регенерация профиля...');
+  const data = await api('POST', `/participants/${id}/regenerate`);
+  if (data?.success) {
+    showToast('Профиль обновлён');
+    openProfile(id);
+  }
+}
+
+// ─── SETTINGS ───────────────────────────────────────────────────
+
+async function loadSettings() {
+  const data = await api('GET', '/settings');
+  if (!data) return;
+  document.getElementById('setting-admin-email').value = data.admin_email || '';
+  document.getElementById('setting-invitation-subject').value = data.invitation_email_subject || '';
+  document.getElementById('setting-invitation-body').value = data.invitation_email_body || '';
+  document.getElementById('setting-reminder-subject').value = data.reminder_email_subject || '';
+}
+
+async function saveSettings() {
+  await api('PUT', '/settings', {
+    admin_email: document.getElementById('setting-admin-email').value,
+    invitation_email_subject: document.getElementById('setting-invitation-subject').value,
+    invitation_email_body: document.getElementById('setting-invitation-body').value,
+    reminder_email_subject: document.getElementById('setting-reminder-subject').value
+  });
+  showToast('Настройки сохранены');
+}
+
+// ─── UTILS ──────────────────────────────────────────────────────
+
+function formatDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('ru-RU', {day:'numeric', month:'short', year:'numeric'});
+}
+
+function escHtml(s) { return (s||'').replace(/'/g, "\\'"); }
+
+// ─── INIT ────────────────────────────────────────────────────────
+
+if (token) {
+  showApp();
+} else {
+  document.getElementById('login-screen').style.display = 'flex';
+}
+</script>
+</body>
+</html>
