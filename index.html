@@ -736,13 +736,13 @@ async function saveParticipant() {
   const body = {
     name: document.getElementById('p-name').value,
     email: document.getElementById('p-email').value,
-    company: document.getElementById('p-company').value,
-    position: document.getElementById('p-position').value,
-    country: document.getElementById('p-country').value,
-    industry: document.getElementById('p-industry').value,
-    age_range: document.getElementById('p-age').value,
-    gender: document.getElementById('p-gender').value,
-    education: document.getElementById('p-education').value
+    company: document.getElementById('p-company').value || null,
+    position: document.getElementById('p-position').value || null,
+    country: document.getElementById('p-country').value || null,
+    industry: document.getElementById('p-industry').value || null,
+    age_range: document.getElementById('p-age').value || null,
+    gender: document.getElementById('p-gender').value || null,
+    education: document.getElementById('p-education').value || null
   };
   if (!body.name || !body.email) return showToast('Имя и email обязательны');
   const data = await api('POST', `/programs/${currentProgramId}/participants`, body);
